@@ -1,141 +1,143 @@
-const fs = require('fs')
+const fs = require('fs');
 
 class ProductManager {
-  // Genera un ID único basado en la marca de tiempo.
-  #generateUniqueId() {
-    return Date.now().toString();
-  }
-
   constructor() {
-    this.path = './products.json'; // Ruta del archivo donde se guardarán los productos.
-    this.products = []; // Inicializa un arreglo para almacenar los productos en memoria.
+    this.path = './products.json';
+    this.nextId = 1; // Variable para almacenar el próximo ID autoincrementable.
   }
 
-  // Obtiene la lista de productos, ya sea del archivo si existe o un arreglo vacío si no existe.
   async getProducts() {
     try {
       if (fs.existsSync(this.path)) {
         const productsJSON = await fs.promises.readFile(this.path, 'utf-8');
         const productsJS = JSON.parse(productsJSON);
-        return productsJS; // Devuelve el array de productos cargado desde el archivo si existe.
+        return productsJS;
       }
-      return []; // Devuelve un array vacío si el archivo no existe.
+      return [];
     } catch (error) {
-      throw new Error("Error al obtener productos: " + error.message);
+      console.log(error);
     }
   }
 
-  // Agrega un producto al arreglo en memoria y lo guarda en el archivo.
-  async addProduct(productData) {
+  async addProduct(product) {
     try {
-      const id = this.#generateUniqueId(); // Genera un ID único para el nuevo producto.
-      const newProduct = { id, ...productData };
-      this.products.push(newProduct); // Agrega el nuevo producto al arreglo en memoria.
-      await fs.promises.writeFile(this.path, JSON.stringify(this.products)); // Guarda la lista de productos en el archivo.
-      return newProduct;
+      const products = await this.getProducts();
+      product.id = this.nextId; // Asigno el ID autoincrementable al producto.
+      this.nextId++; // Incremento el valor del próximo ID.
+      products.push(product);
+      await fs.promises.writeFile(this.path, JSON.stringify(products));
     } catch (error) {
-      throw new Error("Error al agregar producto: " + error.message);
+      console.log(error);
     }
   }
 
-  // Obtiene un producto por su ID (simulando una operación asincrónica).
-  async getProductById(id) {
-    try {
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          const product = this.products.find((p) => p.id === id);
-          if (!product) {
-            reject(new Error("Producto no encontrado"));
-          } else {
-            resolve(product);
-          }
-        }, 1250); // Simulando una operación asincrónica (puedes reemplazar esto con tu lógica real).
-      });
-    } catch (error) {
-      throw new Error("Error al obtener producto por ID: " + error.message);
+  // Obtiene un producto por su ID.
+async getProductById(idProduct) {
+  try {
+    const products = await this.getProducts(); // Almaceno los productos en una variable para desp usar find y retornar el objeto.
+  const showProduct = products.find(product => product.id === idProduct);
+  return showProduct;
+  } catch (error) {
+    console.log(error)
+  } // En lugar de mostrarlo por consola, devuelve el producto encontrado.
+}
+// Actualiza un producto por su ID.
+async updateProduct(idProduct, fieldsToUpdate) {
+  try {
+    const products = await this.getProducts();
+    const productIndex = products.findIndex(product => product.id === idProduct);
+    if (productIndex !== -1) {
+      const productToUpdate = products[productIndex];
+      for (const field in fieldsToUpdate) {
+        if (productToUpdate.hasOwnProperty(field)) {
+          productToUpdate[field] = fieldsToUpdate[field];
+        }
+      }
+      await fs.promises.writeFile(this.path, JSON.stringify(products));
+      await this.getProducts(); 
+    } else {
+      console.log(`No se encontró ningún producto con el ID ${idProduct}`);
     }
+  } catch (error) {
+    console.log(error);
   }
+}
 
-  // Actualiza un producto por su ID (simulando una operación asincrónica).
-  async updateProduct(id, updatedData) {
+  // Elimina un producto por su ID .
+    async deleteProduct(idProduct) {
     try {
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          const index = this.products.findIndex((p) => p.id === id);
-          if (index === -1) {
-            reject(new Error("Producto no encontrado"));
-          } else {
-            this.products[index] = { ...this.products[index], ...updatedData };
-            resolve(this.products[index]);
-          }
-        }, 1250); // Simulando una operación asincrónica.
-      });
+      const products = await this.getProducts();
+      const updatedProducts = products.filter(product => product.id !== idProduct);
+      await fs.promises.writeFile(this.path, JSON.stringify(updatedProducts));
     } catch (error) {
-      throw Error("Error al actualizar producto: " + error.message);
-    }
-  }
-
-  // Elimina un producto por su ID (simulando una operación asincrónica).
-  async deleteProduct(id) {
-    try {
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          const index = this.products.findIndex((p) => p.id === id);
-          if (index === -1) {
-            reject(new Error("Producto no encontrado"));
-          } else {
-            const deletedProduct = this.products.splice(index, 1);
-            resolve(deletedProduct[0]);
-          }
-        }, 1250); // Simulando una operación asincrónica.
-      });
-    } catch (error) {
-      throw new Error("Error al eliminar producto: " + error.message);
+      console.log(error);
     }
   }
 }
 
 const productManager = new ProductManager(); // Crea una instancia de ProductManager.
 
-async function test() {
+const product1 = {
+title: "JERINGA",
+description: "Este es un producto prueba",
+price: 200,
+thumbnail: "Sin imagen",
+code: "ACC0101",
+stock: 25
+};
+
+const product2 = {
+title: "GASA",
+description: "Este es un producto prueba",
+price: 400,
+thumbnail: "Sin imagen",
+code: "ACC0201",
+stock: 25
+};
+
+const product3 = {
+title: "VENDA",
+description: "Este es un producto prueba",
+price: 2500,
+thumbnail: "Sin imagen",
+code: "ACC0301",
+stock: 25
+};
+
+const product4 = {
+title: "ALCOHOL EN GEL",
+description: "Este es un producto prueba",
+price: 100,
+thumbnail: "Sin imagen",
+code: "ACC0401",
+stock: 25
+};
+// funcion para realizar las consultas de prueba.
+const test = async () => {
+  console.log('PRIMER CONSULTA - MOSTRAR ARRAY VACIO', await productManager.getProducts());
+  // addProduct
+  await productManager.addProduct(product1);
+  console.log('SEGUNDA CONSULTA - AGREGO UN PRODUCTO AL ARCHIVO', await productManager.getProducts());
+  await productManager.addProduct(product2);
+  console.log('TERCER CONSULTA - AGREGO DOS MAS', await productManager.getProducts());
+  await productManager.addProduct(product3);
+  await productManager.addProduct(product4);
   
-    const productData = {
-    title: "JERINGA",
-    description: "Este es un producto prueba",
-    price: 200,
-    thumbnail: "Sin imagen",
-    code: "ACC0701",
-    stock: 25
-  };
+  // getProductById
+  const foundProduct = await productManager.getProductById(3);
+  console.log('CUARTA CONSULTA - ENCONTRAR POR ID:', foundProduct);
 
-try {
-    // Obtiene y muestra el array de productos (inicialmente vacío) antes de agregar uno.
-    const showEmptyArray = await productManager.getProducts();
-    console.log('El archivo no existe. Se genera uno vacio =>', showEmptyArray);
+  // updateProduct - un solo campo.
+await productManager.updateProduct(4, {
+  title: "PRODUCTO MODIFICADO",
+  code: "NUEVO CODIGO DE ARTICULO",
+  price: 1000000
+});
+  console.log('QUINTA CONSULTA - MODIFICAR PRODUCTO OBTENIDO POR ID Y MOSTRAR ARRAY ACTUALIZADO: ', await productManager.getProducts());
 
-    // Agrega un nuevo producto.
-    const addedProduct = await productManager.addProduct(productData);
-    console.log("Producto agregado:", addedProduct);
-
-    // Obtiene y muestra el producto por su ID.
-    const retrievedProduct = await productManager.getProductById(addedProduct.id);
-    console.log("Producto recuperado por ID:", retrievedProduct);
-
-    // Actualiza el producto.
-    const updatedProduct = await productManager.updateProduct(addedProduct.id, {
-      title: 'YA NO ES JERINGA',
-      description: 'Este es un producto ACTUALIZADO',      
-      price: 2500,
-      stock: 999
-    });
-    console.log("Producto actualizado:", updatedProduct);
-
-    // Elimina el producto.
-    const deletedProduct = await productManager.deleteProduct(addedProduct.id);
-    console.log("Producto eliminado:", deletedProduct);
-  } catch (error) {
-    console.error(error.message);
-  }
-}
+  // deleteProduct
+await productManager.deleteProduct(3);
+  console.log('SEXTA CONSULTA - ELIMINAR PRODUCTO POR ID Y MOSTRAR ARRAY ACTUALIZADO:', await productManager.getProducts());
+} 
 
 test();
