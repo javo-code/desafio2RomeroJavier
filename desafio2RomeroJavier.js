@@ -21,6 +21,10 @@ class ProductManager {
 
   async addProduct(product) {
     try {
+      if (!title || !description || !price || !img || !code || !stock) {
+      console.log('Error: Todos los campos son obligatorios.');
+      return; // Salir del método si algún campo está faltando
+    }
       const products = await this.getProducts();
       product.id = this.nextId; // Asigno el ID autoincrementable al producto.
       this.nextId++; // Incremento el valor del próximo ID.
